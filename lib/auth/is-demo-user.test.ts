@@ -9,26 +9,26 @@ import {
 
 describe("demo user helpers", () => {
   it("normalizes configured demo email", () => {
-    expect(getConfiguredDemoEmail({ DEMO_USER_EMAIL: " Demo@PipeFlow.Local " })).toBe(
-      "demo@pipeflow.local",
+    expect(getConfiguredDemoEmail({ DEMO_USER_EMAIL: " Demo@PipeFlow.App " })).toBe(
+      "demo@pipeflow.app",
     );
   });
 
   it("identifies the configured demo user by email", () => {
     expect(
-      isDemoUserEmail("DEMO@pipeflow.local", {
-        DEMO_USER_EMAIL: "demo@pipeflow.local",
+      isDemoUserEmail("DEMO@pipeflow.app", {
+        DEMO_USER_EMAIL: "demo@pipeflow.app",
       }),
     ).toBe(true);
   });
 
   it("fails safely when demo email is not configured", () => {
-    expect(isDemoUserEmail("demo@pipeflow.local", {})).toBe(false);
+    expect(isDemoUserEmail("demo@pipeflow.app", {})).toBe(false);
   });
 
   it("does not restrict normal users", () => {
     expect(
-      isDemoUser({ email: "owner@example.co.nz" }, { DEMO_USER_EMAIL: "demo@pipeflow.local" }),
+      isDemoUser({ email: "owner@example.co.nz" }, { DEMO_USER_EMAIL: "demo@pipeflow.app" }),
     ).toBe(false);
   });
 

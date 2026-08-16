@@ -1,5 +1,6 @@
 # PipeFlow
 
+[![CI](https://github.com/sonpeterweb/pipeflow/actions/workflows/ci.yml/badge.svg)](https://github.com/sonpeterweb/pipeflow/actions/workflows/ci.yml)
 ![Next.js 16](https://img.shields.io/badge/Next.js-16-black)
 ![React](https://img.shields.io/badge/React-19-149eca)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6)
@@ -145,7 +146,7 @@ Fill in `.env.local` with values from your Supabase project:
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your-project-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-DEMO_USER_EMAIL=demo@pipeflow.local
+DEMO_USER_EMAIL=demo@pipeflow.app
 DEMO_USER_PASSWORD=your-demo-password
 ```
 
@@ -175,7 +176,7 @@ To load realistic demo data, create a demo user through the app signup flow, the
 
 For a hosted portfolio demo:
 
-1. Create a dedicated Supabase Auth user, for example `demo@pipeflow.local`.
+1. Create a dedicated Supabase Auth user, for example `demo@pipeflow.app`.
 2. Use a strong password and store it only in deployment environment variables.
 3. Copy the demo user's Supabase Auth ID for your own records.
 4. Run `supabase/seed.sql` so the demo records belong to that user.

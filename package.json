@@ -1,6 +1,6 @@
 {
-  "name": "pipeflow-next-supabase",
-  "version": "0.1.0",
+  "name": "pipeflow",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",

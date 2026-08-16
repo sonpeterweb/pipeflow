@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
-  ArrowDownRight,
-  ArrowUpRight,
   Banknote,
   CalendarClock,
   CheckCircle2,
@@ -13,7 +11,12 @@ import {
   Wrench,
 } from "lucide-react";
 
+import { ActivityFeed } from "@/components/dashboard/activity-feed";
+import { DashboardError } from "@/components/dashboard/dashboard-error";
+import { MetricCard } from "@/components/dashboard/metric-card";
+import { ProgressRow, percent } from "@/components/dashboard/progress-row";
 import { buttonVariants } from "@/components/ui/button";
+import { DashboardCard } from "@/components/ui/dashboard-card";
 import {
   calculateDashboardMetrics,
   formatCurrency,
@@ -21,130 +24,6 @@ import {
   type DashboardJobMetricRow,
 } from "@/lib/dashboard/metrics";
 import { createClient } from "@/lib/supabase/server";
-import { DashboardCard } from "@/components/ui/dashboard-card";
-import { cn } from "@/lib/utils";
-
-function MetricCard({
-  description,
-  icon,
-  label,
-  tone = "blue",
-  trend,
-  value,
-}: {
-  description?: string;
-  icon: React.ReactNode;
-  label: string;
-  tone?: "blue" | "green" | "slate" | "amber";
-  trend?: {
-    direction: "up" | "down";
-    label: string;
-  };
-  value: string;
-}) {
-  const toneClasses = {
-    amber: "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300",
-    blue: "bg-brand-primary-light text-brand-primary dark:bg-blue-950 dark:text-blue-300",
-    green: "bg-green-50 text-green-700 dark:bg-green-950/70 dark:text-green-300",
-    slate: "bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300",
-  };
-  const TrendIcon = trend?.direction === "down" ? ArrowDownRight : ArrowUpRight;
-
-  return (
-    <article className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-            {label}
-          </p>
-          <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
-            {value}
-          </p>
-        </div>
-        <div
-          className={cn(
-            "flex size-11 shrink-0 items-center justify-center rounded-xl",
-            toneClasses[tone],
-          )}
-        >
-          {icon}
-        </div>
-      </div>
-      {description ? (
-        <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">
-          {description}
-        </p>
-      ) : null}
-      {trend ? (
-        <div
-          className={cn(
-            "mt-4 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold",
-            trend.direction === "down"
-              ? "bg-red-50 text-red-700 dark:bg-red-950/70 dark:text-red-300"
-              : "bg-green-50 text-green-700 dark:bg-green-950/70 dark:text-green-300",
-          )}
-        >
-          <TrendIcon aria-hidden="true" className="size-3.5" />
-          {trend.label}
-        </div>
-      ) : null}
-    </article>
-  );
-}
-
-function ErrorMessage({ message }: { message: string }) {
-  return (
-    <div className="rounded-xl border border-red-200 bg-red-50 p-6 dark:border-red-900 dark:bg-red-950/40">
-      <h2 className="text-base font-semibold text-red-800 dark:text-red-200">
-        Unable to load dashboard data
-      </h2>
-      <p className="mt-2 text-sm leading-6 text-red-700 dark:text-red-300">
-        {message}
-      </p>
-      <Link
-        className={buttonVariants({ className: "mt-4", variant: "outline" })}
-        href="/dashboard"
-      >
-        Try again
-      </Link>
-    </div>
-  );
-}
-
-function percent(value: number, total: number) {
-  if (total <= 0) {
-    return 0;
-  }
-
-  return Math.round((value / total) * 100);
-}
-
-function ProgressRow({
-  color,
-  label,
-  value,
-  width,
-}: {
-  color: string;
-  label: string;
-  value: string;
-  width: number;
-}) {
-  return (
-    <div>
-      <div className="mb-2 flex items-center justify-between gap-4 text-sm">
-        <span className="font-medium text-slate-700 dark:text-slate-300">{label}</span>
-        <span className="font-semibold text-slate-950 dark:text-slate-100">{value}</span>
-      </div>
-      <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-900">
-        <div
-          className={cn("h-full rounded-full", color)}
-          style={{ width: `${Math.max(width, 4)}%` }}
-        />
-      </div>
-    </div>
-  );
-}
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -186,7 +65,7 @@ export default async function DashboardPage() {
             your PipeFlow workspace.
           </p>
         </div>
-        <ErrorMessage message="Refresh the page or try again shortly." />
+        <DashboardError message="Refresh the page or try again shortly." />
       </section>
     );
   }
@@ -445,26 +324,7 @@ export default async function DashboardPage() {
           subtitle="A concise feed generated from current workspace metrics."
           title="Activity"
         >
-          <div className="space-y-4">
-            {activityItems.map((item) => (
-              <div className="flex gap-3" key={item.title}>
-                <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-400">
-                  {item.icon}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="font-medium text-slate-950 dark:text-slate-100">{item.title}</p>
-                    <time className="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
-                      {item.timestamp}
-                    </time>
-                  </div>
-                  <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">
-                    {item.description}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <ActivityFeed items={activityItems} />
         </DashboardCard>
       </div>
     </section>
