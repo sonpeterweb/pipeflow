@@ -63,7 +63,7 @@ Browser
 Next.js 16 (App Router)
     │
     ▼
-Server Actions
+Server Actions + Route Handlers
     │
     ▼
 Supabase Auth
@@ -75,7 +75,7 @@ PostgreSQL Database
 Row Level Security (RLS)
 ```
 
-PipeFlow uses a modern Next.js App Router architecture with Server Actions for secure mutations. Authentication is handled by Supabase Auth, while PostgreSQL and Row Level Security (RLS) ensure each user can only access their own workspace data.
+PipeFlow uses a modern Next.js App Router architecture with Server Actions for secure mutations and Node.js Route Handlers for private PDF responses. Authentication is handled by Supabase Auth, while PostgreSQL and Row Level Security (RLS) ensure each user can only access their own workspace data.
 
 ## Tech Stack
 
@@ -98,6 +98,7 @@ PipeFlow uses a modern Next.js App Router architecture with Server Actions for s
 - Quote management
 - Invoice management
 - Quote-to-invoice conversion for accepted quotes with duplicate protection
+- Server-generated quote and invoice PDFs with secure download and print support
 - Dashboard analytics
 - Responsive UI
 - One-click demo workspace
@@ -110,6 +111,7 @@ PipeFlow uses a modern Next.js App Router architecture with Server Actions for s
 - `lib/*/validation.ts` contains Zod schemas for form-backed resources.
 - `lib/dashboard/metrics.ts` calculates dashboard metrics from Supabase rows.
 - `lib/quotes/convert-to-invoice.ts` performs friendly user-scoped checks before invoking the atomic database conversion workflow.
+- `lib/documents/` maps ownership-scoped records into business documents and renders private A4 PDFs from trusted server data.
 - `lib/supabase/` contains browser, server, and proxy Supabase clients.
 - `supabase/migrations/001_initial_schema.sql` defines the database schema, indexes, triggers, and RLS policies.
 - `supabase/migrations/002_quote_to_invoice_workflow.sql` links invoices to source quotes, atomically creates converted invoices, protects invoice-number allocation, and extends invoice/quote ownership rules.
@@ -209,7 +211,7 @@ pnpm test:e2e # run Playwright smoke tests
 
 ## Testing
 
-Tests are intentionally focused and lightweight for a portfolio SaaS project. They cover shared utilities, form validation, dashboard metric calculations, quote-to-invoice business rules and Server Action outcomes, migration security invariants, accessible confirmation behavior, and an auth/dashboard smoke flow.
+Tests are intentionally focused and lightweight for a portfolio SaaS project. They cover shared utilities, form validation, dashboard metric calculations, quote-to-invoice business rules and Server Action outcomes, migration security invariants, PDF data mapping, rendering and private-response security, accessible confirmation behavior, and an auth/dashboard smoke flow.
 
 ```bash
 pnpm test

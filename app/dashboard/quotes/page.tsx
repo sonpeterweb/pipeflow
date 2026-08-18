@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { FileText, Plus } from "lucide-react";
+import { Download, FileText, Plus } from "lucide-react";
 
 import {
   createQuote,
@@ -366,30 +366,45 @@ function QuoteCard({
   return (
     <RecordCard
       actions={
-        quote.status === "accepted" ? (
-          !invoiceLinksAvailable ? (
-            <Button disabled type="button" variant="outline">
-              Invoice status unavailable
-            </Button>
-          ) : sourceInvoice ? (
-            <Link
-              className={buttonVariants({ variant: "outline" })}
-              href={invoiceHref}
-            >
-              View Invoice
-            </Link>
-          ) : (
-            <ConfirmationDialog
-              action={convertQuoteWithId}
-              confirmLabel="Create invoice"
-              description="This will create a draft invoice using this quote’s customer, job, and amount details."
-              pendingLabel="Creating invoice..."
-              title="Create invoice from quote?"
-              triggerLabel="Convert to Invoice"
-              variant="primary"
-            />
-          )
-        ) : null
+        <>
+          <Link
+            aria-label={`Download PDF for ${quoteTitle}`}
+            className={buttonVariants({
+              className: "gap-2",
+              variant: "outline",
+            })}
+            href={`/dashboard/quotes/${quote.id}/pdf`}
+            rel="noreferrer"
+            target="_blank"
+          >
+            <Download aria-hidden="true" className="size-4" />
+            Download PDF
+          </Link>
+          {quote.status === "accepted" ? (
+            !invoiceLinksAvailable ? (
+              <Button disabled type="button" variant="outline">
+                Invoice status unavailable
+              </Button>
+            ) : sourceInvoice ? (
+              <Link
+                className={buttonVariants({ variant: "outline" })}
+                href={invoiceHref}
+              >
+                View Invoice
+              </Link>
+            ) : (
+              <ConfirmationDialog
+                action={convertQuoteWithId}
+                confirmLabel="Create invoice"
+                description="This will create a draft invoice using this quote’s customer, job, and amount details."
+                pendingLabel="Creating invoice..."
+                title="Create invoice from quote?"
+                triggerLabel="Convert to Invoice"
+                variant="primary"
+              />
+            )
+          ) : null}
+        </>
       }
       eyebrow={
         <StatusBadge tone={statusTones[quote.status]}>

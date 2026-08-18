@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Plus, Receipt } from "lucide-react";
+import { Download, Plus, Receipt } from "lucide-react";
 
 import {
   createInvoice,
@@ -357,6 +357,21 @@ function InvoiceCard({
 
   return (
     <RecordCard
+      actions={
+        <Link
+          aria-label={`Download PDF for ${invoiceTitle}`}
+          className={buttonVariants({
+            className: "gap-2",
+            variant: "outline",
+          })}
+          href={`/dashboard/invoices/${invoice.id}/pdf`}
+          rel="noreferrer"
+          target="_blank"
+        >
+          <Download aria-hidden="true" className="size-4" />
+          Download PDF
+        </Link>
+      }
       eyebrow={
         <StatusBadge tone={statusTones[invoice.status]}>
           {statusLabels[invoice.status]}
