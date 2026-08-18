@@ -7,6 +7,7 @@ import {
   formatDocumentDate,
   formatDocumentMoney,
   renderBusinessDocumentPdf,
+  resolvePdfDocumentConstructor,
 } from "@/lib/documents/renderer";
 
 const baseDocument: BusinessDocumentModel = {
@@ -37,6 +38,17 @@ const baseDocument: BusinessDocumentModel = {
 };
 
 describe("business document PDF renderer", () => {
+  it("supports direct and default-wrapped PDFKit constructors", () => {
+    class TestPdfDocument {}
+
+    expect(resolvePdfDocumentConstructor(TestPdfDocument)).toBe(
+      TestPdfDocument,
+    );
+    expect(
+      resolvePdfDocumentConstructor({ default: TestPdfDocument }),
+    ).toBe(TestPdfDocument);
+  });
+
   it("creates a real A4 PDF for a quote", async () => {
     const pdf = await renderBusinessDocumentPdf(baseDocument);
     const source = new TextDecoder("latin1").decode(pdf);

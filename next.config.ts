@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
       "./node_modules/next/dist/compiled/@vercel/og/Geist-Regular.ttf",
     ],
   },
+  serverExternalPackages: ["pdfkit"],
   // Pin Turbopack's workspace root so HMR does not lose the installed `next`
   // package after cache churn (common cause of "Next.js package not found").
   turbopack: {

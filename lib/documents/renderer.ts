@@ -5,7 +5,28 @@ import { join } from "node:path";
 import type { BusinessDocumentModel, DocumentParty } from "@/lib/documents/model";
 
 const require = createRequire(import.meta.url);
-const PDFDocument = require("pdfkit") as typeof import("pdfkit");
+type PDFDocumentConstructor = typeof import("pdfkit");
+
+export function resolvePdfDocumentConstructor(
+  pdfKitModule: unknown,
+): PDFDocumentConstructor {
+  if (typeof pdfKitModule === "function") {
+    return pdfKitModule as PDFDocumentConstructor;
+  }
+
+  if (
+    typeof pdfKitModule === "object" &&
+    pdfKitModule !== null &&
+    "default" in pdfKitModule &&
+    typeof pdfKitModule.default === "function"
+  ) {
+    return pdfKitModule.default as PDFDocumentConstructor;
+  }
+
+  throw new TypeError("PDFKit did not expose a PDFDocument constructor.");
+}
+
+const PDFDocument = resolvePdfDocumentConstructor(require("pdfkit"));
 const geistFontPath = join(
   process.cwd(),
   "node_modules/next/dist/compiled/@vercel/og/Geist-Regular.ttf",
