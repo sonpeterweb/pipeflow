@@ -4,12 +4,13 @@ import { FileText, Plus } from "lucide-react";
 
 import {
   createQuote,
+  convertQuoteToInvoice,
   deleteQuote,
   updateQuote,
 } from "@/app/dashboard/quotes/actions";
 import { ConfirmationDialog } from "@/components/feedback/confirmation-dialog";
 import { SubmitButton } from "@/components/feedback/submit-button";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { CardSection } from "@/components/ui/card";
 import {
   ActionPanel,
@@ -48,6 +49,12 @@ type JobOption = {
   id: string;
   title: string;
   customer_id: string | null;
+};
+
+type SourceInvoice = {
+  id: string;
+  invoice_number: string | null;
+  quote_id: string;
 };
 
 type QuotesPageProps = {
@@ -336,20 +343,54 @@ function QuoteCard({
   customersById,
   jobs,
   jobsById,
+  invoiceLinksAvailable,
+  sourceInvoice,
   quote,
 }: {
   customers: CustomerOption[];
   customersById: Map<string, CustomerOption>;
   jobs: JobOption[];
   jobsById: Map<string, JobOption>;
+  invoiceLinksAvailable: boolean;
+  sourceInvoice?: SourceInvoice;
   quote: Quote;
 }) {
   const updateQuoteWithId = updateQuote.bind(null, quote.id);
   const deleteQuoteWithId = deleteQuote.bind(null, quote.id);
+  const convertQuoteWithId = convertQuoteToInvoice.bind(null, quote.id);
   const quoteTitle = quote.quote_number || "Untitled quote";
+  const invoiceHref = sourceInvoice?.invoice_number
+    ? `/dashboard/invoices?q=${encodeURIComponent(sourceInvoice.invoice_number)}`
+    : "/dashboard/invoices";
 
   return (
     <RecordCard
+      actions={
+        quote.status === "accepted" ? (
+          !invoiceLinksAvailable ? (
+            <Button disabled type="button" variant="outline">
+              Invoice status unavailable
+            </Button>
+          ) : sourceInvoice ? (
+            <Link
+              className={buttonVariants({ variant: "outline" })}
+              href={invoiceHref}
+            >
+              View Invoice
+            </Link>
+          ) : (
+            <ConfirmationDialog
+              action={convertQuoteWithId}
+              confirmLabel="Create invoice"
+              description="This will create a draft invoice using this quote’s customer, job, and amount details."
+              pendingLabel="Creating invoice..."
+              title="Create invoice from quote?"
+              triggerLabel="Convert to Invoice"
+              variant="primary"
+            />
+          )
+        ) : null
+      }
       eyebrow={
         <StatusBadge tone={statusTones[quote.status]}>
           {statusLabels[quote.status]}
@@ -414,31 +455,41 @@ export default async function QuotesPage({ searchParams }: QuotesPageProps) {
     redirect("/login");
   }
 
-  const [quotesResult, customersResult, jobsResult] = await Promise.all([
-    supabase
-      .from("quotes")
-      .select(
-        "id,quote_number,customer_id,job_id,amount,status,issued_at,accepted_at,created_at",
-      )
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("customers")
-      .select("id,name,company_name")
-      .eq("user_id", user.id)
-      .order("name", { ascending: true }),
-    supabase
-      .from("jobs")
-      .select("id,title,customer_id")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false }),
-  ]);
+  const [quotesResult, customersResult, jobsResult, invoiceLinksResult] =
+    await Promise.all([
+      supabase
+        .from("quotes")
+        .select(
+          "id,quote_number,customer_id,job_id,amount,status,issued_at,accepted_at,created_at",
+        )
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("customers")
+        .select("id,name,company_name")
+        .eq("user_id", user.id)
+        .order("name", { ascending: true }),
+      supabase
+        .from("jobs")
+        .select("id,title,customer_id")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("invoices")
+        .select("id,invoice_number,quote_id")
+        .eq("user_id", user.id)
+        .not("quote_id", "is", null),
+    ]);
 
   const quotes = (quotesResult.data ?? []) as Quote[];
   const customers = (customersResult.data ?? []) as CustomerOption[];
   const jobs = (jobsResult.data ?? []) as JobOption[];
+  const sourceInvoices = (invoiceLinksResult.data ?? []) as SourceInvoice[];
   const customersById = new Map(customers.map((customer) => [customer.id, customer]));
   const jobsById = new Map(jobs.map((job) => [job.id, job]));
+  const invoicesByQuoteId = new Map(
+    sourceInvoices.map((invoice) => [invoice.quote_id, invoice]),
+  );
   const search = params.q ?? "";
   const normalizedSearch = normalize(search);
   const status =
@@ -483,6 +534,12 @@ export default async function QuotesPage({ searchParams }: QuotesPageProps) {
           tone="error"
         />
       ) : null}
+      {invoiceLinksResult.error ? (
+        <Message
+          message="Unable to load quote invoice links. Invoice actions are temporarily unavailable."
+          tone="error"
+        />
+      ) : null}
 
       <CardSection
         className="scroll-mt-6"
@@ -519,8 +576,10 @@ export default async function QuotesPage({ searchParams }: QuotesPageProps) {
               customersById={customersById}
               jobs={jobs}
               jobsById={jobsById}
+              invoiceLinksAvailable={!invoiceLinksResult.error}
               key={quote.id}
               quote={quote}
+              sourceInvoice={invoicesByQuoteId.get(quote.id)}
             />
           ))
         ) : quotes.length > 0 ? (

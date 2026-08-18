@@ -14,12 +14,18 @@ import {
   parseQuoteFormData,
 } from "@/lib/quotes/validation";
 import {
+  convertAcceptedQuoteToInvoice,
+  type QuoteToInvoiceResult,
+} from "@/lib/quotes/convert-to-invoice";
+import {
   demoDeleteDisabledMessage,
   isDemoUser,
 } from "@/lib/auth/is-demo-user";
 import { createClient } from "@/lib/supabase/server";
 
 const quotesPath = "/dashboard/quotes";
+const invoicesPath = "/dashboard/invoices";
+const dashboardPath = "/dashboard";
 
 function redirectWithMessage(type: FeedbackType, message: string): never {
   redirectWithFeedback(quotesPath, type, message);
@@ -103,4 +109,56 @@ export async function deleteQuote(quoteId: string) {
 
   revalidatePath(quotesPath);
   redirectWithMessage("success", "Quote deleted.");
+}
+
+export async function convertQuoteToInvoice(quoteId: string) {
+  const { supabase, user } = await getAuthenticatedUserId();
+  let result: QuoteToInvoiceResult;
+
+  try {
+    result = await convertAcceptedQuoteToInvoice({
+      quoteId,
+      supabase,
+      userId: user.id,
+    });
+  } catch (error) {
+    result = { kind: "error", error };
+  }
+
+  if (result.kind === "not_found") {
+    redirectWithMessage("error", "Quote not found.");
+  }
+
+  if (result.kind === "ineligible") {
+    redirectWithMessage(
+      "warning",
+      "Only accepted quotes can be converted to invoices.",
+    );
+  }
+
+  if (result.kind === "error") {
+    logServerActionError("convertQuoteToInvoice", result.error);
+    redirectWithMessage(
+      "error",
+      "Unable to create invoice from quote. Please try again.",
+    );
+  }
+
+  revalidatePath(quotesPath);
+  revalidatePath(invoicesPath);
+  revalidatePath(dashboardPath);
+
+  if (result.kind === "duplicate") {
+    redirectWithFeedback(
+      invoicesPath,
+      "warning",
+      "An invoice already exists for this quote.",
+    );
+  }
+
+  redirectWithFeedback(
+    invoicesPath,
+    "success",
+    "Invoice created from quote.",
+  );
 }

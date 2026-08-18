@@ -21,8 +21,8 @@
 
 do $$
 declare
-  demo_user_email text := 'demo@pipeflow.app';
-  demo_user_id uuid := '742b9691-c4d1-48c1-82e7-12e07b752190';
+  demo_user_email text := 'demo@pipeflow.local';
+  demo_user_id uuid := 'bb9c657d-1022-4355-9b58-eabe6adc12a8';
   anchor_date timestamptz := '2026-07-09 09:00:00+12';
 begin
   select id
@@ -184,6 +184,7 @@ begin
     user_id,
     customer_id,
     job_id,
+    quote_id,
     invoice_number,
     amount,
     status,
@@ -193,24 +194,24 @@ begin
     created_at
   )
   values
-    ('40000000-0000-0000-0000-000000000001', demo_user_id, '10000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000004', 'INV-1024', 890.00, 'paid', anchor_date - interval '17 days', anchor_date - interval '3 days', anchor_date - interval '5 days', anchor_date - interval '17 days'),
-    ('40000000-0000-0000-0000-000000000002', demo_user_id, '10000000-0000-0000-0000-000000000005', '20000000-0000-0000-0000-000000000005', 'INV-1025', 740.00, 'paid', anchor_date - interval '13 days', anchor_date + interval '1 day', anchor_date - interval '4 days', anchor_date - interval '13 days'),
-    ('40000000-0000-0000-0000-000000000003', demo_user_id, '10000000-0000-0000-0000-000000000011', '20000000-0000-0000-0000-000000000011', 'INV-1026', 365.00, 'paid', anchor_date - interval '20 days', anchor_date - interval '6 days', anchor_date - interval '8 days', anchor_date - interval '20 days'),
-    ('40000000-0000-0000-0000-000000000004', demo_user_id, '10000000-0000-0000-0000-000000000013', '20000000-0000-0000-0000-000000000013', 'INV-1027', 420.00, 'paid', anchor_date - interval '10 days', anchor_date + interval '4 days', anchor_date - interval '2 days', anchor_date - interval '10 days'),
-    ('40000000-0000-0000-0000-000000000005', demo_user_id, '10000000-0000-0000-0000-000000000015', '20000000-0000-0000-0000-000000000015', 'INV-1028', 7200.00, 'paid', anchor_date - interval '31 days', anchor_date - interval '17 days', anchor_date - interval '14 days', anchor_date - interval '31 days'),
-    ('40000000-0000-0000-0000-000000000006', demo_user_id, '10000000-0000-0000-0000-000000000018', '20000000-0000-0000-0000-000000000018', 'INV-1029', 680.00, 'paid', anchor_date - interval '23 days', anchor_date - interval '9 days', anchor_date - interval '7 days', anchor_date - interval '23 days'),
-    ('40000000-0000-0000-0000-000000000007', demo_user_id, '10000000-0000-0000-0000-000000000019', '20000000-0000-0000-0000-000000000019', 'INV-1030', 575.00, 'paid', anchor_date - interval '15 days', anchor_date - interval '1 day', anchor_date - interval '3 days', anchor_date - interval '15 days'),
-    ('40000000-0000-0000-0000-000000000008', demo_user_id, '10000000-0000-0000-0000-000000000013', null, 'INV-1031', 450.00, 'draft', null, null, null, anchor_date - interval '1 day'),
-    ('40000000-0000-0000-0000-000000000009', demo_user_id, '10000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000021', 'INV-1032', 2850.00, 'paid', anchor_date - interval '41 days', anchor_date - interval '27 days', anchor_date - interval '25 days', anchor_date - interval '41 days'),
-    ('40000000-0000-0000-0000-000000000010', demo_user_id, '10000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000023', 'INV-1033', 295.00, 'paid', anchor_date - interval '50 days', anchor_date - interval '36 days', anchor_date - interval '35 days', anchor_date - interval '50 days'),
-    ('40000000-0000-0000-0000-000000000011', demo_user_id, '10000000-0000-0000-0000-000000000008', '20000000-0000-0000-0000-000000000028', 'INV-1034', 510.00, 'paid', anchor_date - interval '44 days', anchor_date - interval '30 days', anchor_date - interval '28 days', anchor_date - interval '44 days'),
-    ('40000000-0000-0000-0000-000000000012', demo_user_id, '10000000-0000-0000-0000-000000000010', '20000000-0000-0000-0000-000000000030', 'INV-1035', 1120.00, 'paid', anchor_date - interval '18 days', anchor_date - interval '4 days', anchor_date - interval '1 day', anchor_date - interval '18 days'),
-    ('40000000-0000-0000-0000-000000000013', demo_user_id, '10000000-0000-0000-0000-000000000014', '20000000-0000-0000-0000-000000000014', 'INV-1036', 1180.00, 'sent', anchor_date - interval '2 days', anchor_date + interval '12 days', null, anchor_date - interval '2 days'),
-    ('40000000-0000-0000-0000-000000000014', demo_user_id, '10000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000002', 'INV-1037', 2450.00, 'sent', anchor_date - interval '1 day', anchor_date + interval '13 days', null, anchor_date - interval '1 day'),
-    ('40000000-0000-0000-0000-000000000015', demo_user_id, '10000000-0000-0000-0000-000000000017', '20000000-0000-0000-0000-000000000037', 'INV-1038', 690.00, 'sent', anchor_date, anchor_date + interval '14 days', null, anchor_date),
-    ('40000000-0000-0000-0000-000000000016', demo_user_id, '10000000-0000-0000-0000-000000000016', null, 'INV-1039', 1250.00, 'draft', null, null, null, anchor_date),
-    ('40000000-0000-0000-0000-000000000017', demo_user_id, '10000000-0000-0000-0000-000000000009', '20000000-0000-0000-0000-000000000009', 'INV-1040', 720.00, 'sent', anchor_date - interval '3 days', anchor_date + interval '11 days', null, anchor_date - interval '3 days'),
-    ('40000000-0000-0000-0000-000000000018', demo_user_id, '10000000-0000-0000-0000-000000000012', '20000000-0000-0000-0000-000000000012', 'INV-1041', 540.00, 'sent', anchor_date - interval '1 day', anchor_date + interval '13 days', null, anchor_date - interval '1 day'),
-    ('40000000-0000-0000-0000-000000000019', demo_user_id, '10000000-0000-0000-0000-000000000006', '20000000-0000-0000-0000-000000000026', 'INV-1042', 330.00, 'overdue', anchor_date - interval '35 days', anchor_date - interval '21 days', null, anchor_date - interval '35 days'),
-    ('40000000-0000-0000-0000-000000000020', demo_user_id, '10000000-0000-0000-0000-000000000020', null, 'INV-1043', 2100.00, 'draft', null, null, null, anchor_date);
+    ('40000000-0000-0000-0000-000000000001', demo_user_id, '10000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000004', null, 'INV-1024', 890.00, 'paid', anchor_date - interval '17 days', anchor_date - interval '3 days', anchor_date - interval '5 days', anchor_date - interval '17 days'),
+    ('40000000-0000-0000-0000-000000000002', demo_user_id, '10000000-0000-0000-0000-000000000005', '20000000-0000-0000-0000-000000000005', null, 'INV-1025', 740.00, 'paid', anchor_date - interval '13 days', anchor_date + interval '1 day', anchor_date - interval '4 days', anchor_date - interval '13 days'),
+    ('40000000-0000-0000-0000-000000000003', demo_user_id, '10000000-0000-0000-0000-000000000011', '20000000-0000-0000-0000-000000000011', null, 'INV-1026', 365.00, 'paid', anchor_date - interval '20 days', anchor_date - interval '6 days', anchor_date - interval '8 days', anchor_date - interval '20 days'),
+    ('40000000-0000-0000-0000-000000000004', demo_user_id, '10000000-0000-0000-0000-000000000013', '20000000-0000-0000-0000-000000000013', null, 'INV-1027', 420.00, 'paid', anchor_date - interval '10 days', anchor_date + interval '4 days', anchor_date - interval '2 days', anchor_date - interval '10 days'),
+    ('40000000-0000-0000-0000-000000000005', demo_user_id, '10000000-0000-0000-0000-000000000015', '20000000-0000-0000-0000-000000000015', '30000000-0000-0000-0000-000000000005', 'INV-1028', 7200.00, 'paid', anchor_date - interval '31 days', anchor_date - interval '17 days', anchor_date - interval '14 days', anchor_date - interval '31 days'),
+    ('40000000-0000-0000-0000-000000000006', demo_user_id, '10000000-0000-0000-0000-000000000018', '20000000-0000-0000-0000-000000000018', null, 'INV-1029', 680.00, 'paid', anchor_date - interval '23 days', anchor_date - interval '9 days', anchor_date - interval '7 days', anchor_date - interval '23 days'),
+    ('40000000-0000-0000-0000-000000000007', demo_user_id, '10000000-0000-0000-0000-000000000019', '20000000-0000-0000-0000-000000000019', null, 'INV-1030', 575.00, 'paid', anchor_date - interval '15 days', anchor_date - interval '1 day', anchor_date - interval '3 days', anchor_date - interval '15 days'),
+    ('40000000-0000-0000-0000-000000000008', demo_user_id, '10000000-0000-0000-0000-000000000013', null, null, 'INV-1031', 450.00, 'draft', null, null, null, anchor_date - interval '1 day'),
+    ('40000000-0000-0000-0000-000000000009', demo_user_id, '10000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000021', '30000000-0000-0000-0000-000000000011', 'INV-1032', 2850.00, 'paid', anchor_date - interval '41 days', anchor_date - interval '27 days', anchor_date - interval '25 days', anchor_date - interval '41 days'),
+    ('40000000-0000-0000-0000-000000000010', demo_user_id, '10000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000023', null, 'INV-1033', 295.00, 'paid', anchor_date - interval '50 days', anchor_date - interval '36 days', anchor_date - interval '35 days', anchor_date - interval '50 days'),
+    ('40000000-0000-0000-0000-000000000011', demo_user_id, '10000000-0000-0000-0000-000000000008', '20000000-0000-0000-0000-000000000028', null, 'INV-1034', 510.00, 'paid', anchor_date - interval '44 days', anchor_date - interval '30 days', anchor_date - interval '28 days', anchor_date - interval '44 days'),
+    ('40000000-0000-0000-0000-000000000012', demo_user_id, '10000000-0000-0000-0000-000000000010', '20000000-0000-0000-0000-000000000030', null, 'INV-1035', 1120.00, 'paid', anchor_date - interval '18 days', anchor_date - interval '4 days', anchor_date - interval '1 day', anchor_date - interval '18 days'),
+    ('40000000-0000-0000-0000-000000000013', demo_user_id, '10000000-0000-0000-0000-000000000014', '20000000-0000-0000-0000-000000000014', null, 'INV-1036', 1180.00, 'sent', anchor_date - interval '2 days', anchor_date + interval '12 days', null, anchor_date - interval '2 days'),
+    ('40000000-0000-0000-0000-000000000014', demo_user_id, '10000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000004', 'INV-1037', 2450.00, 'sent', anchor_date - interval '1 day', anchor_date + interval '13 days', null, anchor_date - interval '1 day'),
+    ('40000000-0000-0000-0000-000000000015', demo_user_id, '10000000-0000-0000-0000-000000000017', '20000000-0000-0000-0000-000000000037', '30000000-0000-0000-0000-000000000013', 'INV-1038', 690.00, 'sent', anchor_date, anchor_date + interval '14 days', null, anchor_date),
+    ('40000000-0000-0000-0000-000000000016', demo_user_id, '10000000-0000-0000-0000-000000000016', null, null, 'INV-1039', 1250.00, 'draft', null, null, null, anchor_date),
+    ('40000000-0000-0000-0000-000000000017', demo_user_id, '10000000-0000-0000-0000-000000000009', '20000000-0000-0000-0000-000000000009', null, 'INV-1040', 720.00, 'sent', anchor_date - interval '3 days', anchor_date + interval '11 days', null, anchor_date - interval '3 days'),
+    ('40000000-0000-0000-0000-000000000018', demo_user_id, '10000000-0000-0000-0000-000000000012', '20000000-0000-0000-0000-000000000012', null, 'INV-1041', 540.00, 'sent', anchor_date - interval '1 day', anchor_date + interval '13 days', null, anchor_date - interval '1 day'),
+    ('40000000-0000-0000-0000-000000000019', demo_user_id, '10000000-0000-0000-0000-000000000006', '20000000-0000-0000-0000-000000000026', null, 'INV-1042', 330.00, 'overdue', anchor_date - interval '35 days', anchor_date - interval '21 days', null, anchor_date - interval '35 days'),
+    ('40000000-0000-0000-0000-000000000020', demo_user_id, '10000000-0000-0000-0000-000000000020', null, null, 'INV-1043', 2100.00, 'draft', null, null, null, anchor_date);
 end $$;

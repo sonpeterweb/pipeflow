@@ -97,6 +97,7 @@ PipeFlow uses a modern Next.js App Router architecture with Server Actions for s
 - Job tracking
 - Quote management
 - Invoice management
+- Quote-to-invoice conversion for accepted quotes with duplicate protection
 - Dashboard analytics
 - Responsive UI
 - One-click demo workspace
@@ -108,8 +109,10 @@ PipeFlow uses a modern Next.js App Router architecture with Server Actions for s
 - `app/dashboard/settings/actions.ts` persists workspace profile changes through Supabase.
 - `lib/*/validation.ts` contains Zod schemas for form-backed resources.
 - `lib/dashboard/metrics.ts` calculates dashboard metrics from Supabase rows.
+- `lib/quotes/convert-to-invoice.ts` performs friendly user-scoped checks before invoking the atomic database conversion workflow.
 - `lib/supabase/` contains browser, server, and proxy Supabase clients.
 - `supabase/migrations/001_initial_schema.sql` defines the database schema, indexes, triggers, and RLS policies.
+- `supabase/migrations/002_quote_to_invoice_workflow.sql` links invoices to source quotes, atomically creates converted invoices, protects invoice-number allocation, and extends invoice/quote ownership rules.
 - `supabase/seed.sql` provides realistic New Zealand trade business demo data.
 
 ## Database & Security
@@ -124,8 +127,12 @@ The Supabase migration creates:
 - indexes for common dashboard queries
 - `updated_at` triggers
 - RLS policies scoped to `auth.uid()`
+- a nullable `invoices.quote_id` relationship with `ON DELETE SET NULL`
+- one linked invoice per user and source quote through a partial unique index
+- unique non-null invoice numbers per user
+- an authenticated, invoker-rights conversion function serialized per user
 
-No service role key is required for the implemented app flows. Authenticated users can only access records that belong to their own workspace.
+No service role key is required for the implemented app flows. Authenticated users can only access records that belong to their own workspace. Invoice insert and update policies verify that linked customers and jobs belong to `auth.uid()` and that a linked source quote both belongs to that user and remains accepted.
 
 ## Local Setup
 
@@ -164,13 +171,15 @@ Open [http://localhost:3000](http://localhost:3000).
 
 1. Create a Supabase project.
 2. Copy the project URL and anon key into `.env.local`.
-3. Apply the migration in `supabase/migrations/001_initial_schema.sql`.
+3. Apply the SQL files in `supabase/migrations/` in numeric order.
 4. Confirm email/password auth is enabled in Supabase Auth.
 5. Start the Next.js dev server with `pnpm dev`.
 
 If you use the Supabase CLI, run the migration through your normal local database flow. Otherwise, paste the SQL migration into the Supabase SQL editor for a demo project.
 
 To load realistic demo data, create a demo user through the app signup flow, then run `supabase/seed.sql` in the Supabase SQL editor.
+
+After a fresh seed, accepted quotes `Q-1050` and `Q-1056` are available for quote-to-invoice testing. Other accepted quotes demonstrate the linked `View Invoice` state. Because the hosted demo is a persistent shared account, conversions remain visible until the deterministic seed is rerun.
 
 ## Portfolio Demo Setup
 
@@ -200,7 +209,7 @@ pnpm test:e2e # run Playwright smoke tests
 
 ## Testing
 
-Tests are intentionally focused and lightweight for a portfolio SaaS project. They cover shared utilities, form validation, dashboard metric calculations, and an auth/dashboard smoke flow.
+Tests are intentionally focused and lightweight for a portfolio SaaS project. They cover shared utilities, form validation, dashboard metric calculations, quote-to-invoice business rules and Server Action outcomes, migration security invariants, accessible confirmation behavior, and an auth/dashboard smoke flow.
 
 ```bash
 pnpm test
