@@ -254,9 +254,9 @@ function ProductPreview() {
 export default function Home() {
   return (
     <div className="flex min-h-full flex-col">
-      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 px-5 py-4 backdrop-blur dark:border-slate-800 dark:bg-slate-950/90">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-          <AppLogo />
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 px-5 py-4 backdrop-blur max-sm:px-3 max-sm:py-3 dark:border-slate-800 dark:bg-slate-950/90">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 max-sm:gap-1">
+          <AppLogo className="shrink-0 max-sm:[&_img]:h-8" />
           <nav className="hidden items-center gap-6 text-sm font-medium text-slate-600 dark:text-slate-400 md:flex">
             <a className="hover:text-slate-950 dark:hover:text-slate-100" href="#features">
               Features
@@ -271,18 +271,22 @@ export default function Home() {
               Scope
             </a>
           </nav>
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 shrink-0 items-center gap-2 max-sm:gap-1">
             <Link
               className={buttonVariants({
                 variant: "ghost",
-                className: "hidden h-10 px-3 sm:inline-flex",
+                className:
+                  "h-10 shrink-0 whitespace-nowrap px-3 max-sm:h-11 max-sm:px-2 max-sm:text-xs",
               })}
               href="/login"
             >
               Sign In
             </Link>
             <Link
-              className={buttonVariants({ className: "h-10 px-4" })}
+              className={buttonVariants({
+                className:
+                  "h-10 shrink-0 whitespace-nowrap px-4 max-sm:h-11 max-sm:px-2 max-sm:text-xs",
+              })}
               href="/signup"
             >
               Start Free Trial
