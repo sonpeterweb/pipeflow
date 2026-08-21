@@ -75,7 +75,7 @@ PostgreSQL Database
 Row Level Security (RLS)
 ```
 
-PipeFlow uses a modern Next.js App Router architecture with Server Actions for secure mutations and Node.js Route Handlers for private PDF responses. Authentication is handled by Supabase Auth, while PostgreSQL and Row Level Security (RLS) ensure each user can only access their own workspace data.
+PipeFlow uses a modern Next.js App Router architecture with Server Actions for secure mutations and Node.js Route Handlers for private PDF responses and verified Stripe webhooks. Authentication is handled by Supabase Auth, while PostgreSQL and Row Level Security (RLS) ensure each user can only access their own workspace data.
 
 ## Tech Stack
 
@@ -99,6 +99,7 @@ PipeFlow uses a modern Next.js App Router architecture with Server Actions for s
 - Invoice management
 - Quote-to-invoice conversion for accepted quotes with duplicate protection
 - Server-generated quote and invoice PDFs with secure download and print support
+- Stripe Checkout test-mode invoice payments with verified webhook status synchronization
 - Dashboard analytics
 - Responsive UI
 - One-click demo workspace
@@ -112,9 +113,12 @@ PipeFlow uses a modern Next.js App Router architecture with Server Actions for s
 - `lib/dashboard/metrics.ts` calculates dashboard metrics from Supabase rows.
 - `lib/quotes/convert-to-invoice.ts` performs friendly user-scoped checks before invoking the atomic database conversion workflow.
 - `lib/documents/` maps ownership-scoped records into business documents and renders private A4 PDFs from trusted server data.
+- `lib/invoices/payment.ts` creates or safely reuses server-side Stripe Checkout Sessions from owned invoice data.
+- `lib/invoices/stripe-webhook.ts` validates authoritative Stripe payment data before synchronizing an invoice.
 - `lib/supabase/` contains browser, server, and proxy Supabase clients.
 - `supabase/migrations/001_initial_schema.sql` defines the database schema, indexes, triggers, and RLS policies.
 - `supabase/migrations/002_quote_to_invoice_workflow.sql` links invoices to source quotes, atomically creates converted invoices, protects invoice-number allocation, and extends invoice/quote ownership rules.
+- `supabase/migrations/003_stripe_invoice_payment.sql` adds unique Stripe references and a protected, user-scoped Checkout Session attachment function.
 - `supabase/seed.sql` provides realistic New Zealand trade business demo data.
 
 ## Database & Security
@@ -133,8 +137,10 @@ The Supabase migration creates:
 - one linked invoice per user and source quote through a partial unique index
 - unique non-null invoice numbers per user
 - an authenticated, invoker-rights conversion function serialized per user
+- nullable, unique Stripe Checkout Session and PaymentIntent references
+- a protected authenticated function that attaches only test-mode Checkout Sessions to eligible owned invoices
 
-No service role key is required for the implemented app flows. Authenticated users can only access records that belong to their own workspace. Invoice insert and update policies verify that linked customers and jobs belong to `auth.uid()` and that a linked source quote both belongs to that user and remains accepted.
+Authenticated users can only access records that belong to their own workspace. Invoice insert and update policies verify that linked customers and jobs belong to `auth.uid()` and that a linked source quote both belongs to that user and remains accepted. The Stripe service-role client is server-only and isolated to the webhook route; it is created only after Stripe signature verification, and every payment update rechecks the stored session, owner, amount, and NZD currency. Normal application access continues through RLS.
 
 ## Local Setup
 
@@ -155,11 +161,15 @@ Fill in `.env.local` with values from your Supabase project:
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your-project-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-server-only-service-role-key
+STRIPE_SECRET_KEY=sk_test_your-test-secret-key
+STRIPE_WEBHOOK_SECRET=whsec_your-local-webhook-secret
+APP_URL=http://localhost:3000
 DEMO_USER_EMAIL=demo@pipeflow.app
 DEMO_USER_PASSWORD=your-demo-password
 ```
 
-Do not commit real Supabase secrets.
+Do not commit real Supabase or Stripe secrets. Task 026 intentionally rejects Stripe live-mode secret keys.
 
 Run the app:
 
@@ -179,9 +189,19 @@ Open [http://localhost:3000](http://localhost:3000).
 
 If you use the Supabase CLI, run the migration through your normal local database flow. Otherwise, paste the SQL migration into the Supabase SQL editor for a demo project.
 
+## Stripe Test-mode Setup
+
+1. Apply `supabase/migrations/003_stripe_invoice_payment.sql` after migrations 001 and 002.
+2. Add a Stripe test secret key, webhook signing secret, trusted `APP_URL`, and server-only Supabase service role key to `.env.local`.
+3. Forward Stripe test events locally with `stripe listen --forward-to localhost:3000/api/stripe/webhook`, then use the printed `whsec_...` value as `STRIPE_WEBHOOK_SECRET`.
+4. Open a `sent` or `overdue` invoice and choose **Pay Invoice**.
+5. In Stripe-hosted Checkout, use test card `4242 4242 4242 4242`, any future expiry, any three-digit CVC, and any postal code.
+
+The workflow is card-only, NZD-only, and test-mode-only. PipeFlow never collects or stores card details. The success page reads synchronized database state but cannot mark an invoice paid; only a verified `checkout.session.completed` webhook can perform the automatic transition.
+
 To load realistic demo data, create a demo user through the app signup flow, then run `supabase/seed.sql` in the Supabase SQL editor.
 
-After a fresh seed, accepted quotes `Q-1050` and `Q-1056` are available for quote-to-invoice testing. Other accepted quotes demonstrate the linked `View Invoice` state. Because the hosted demo is a persistent shared account, conversions remain visible until the deterministic seed is rerun.
+After a fresh seed, accepted quotes `Q-1050` and `Q-1056` are available for quote-to-invoice testing. Other accepted quotes demonstrate the linked `View Invoice` state. Because the hosted demo is a persistent shared account, conversions and test payments remain visible until the deterministic seed is rerun.
 
 ## Portfolio Demo Setup
 
@@ -211,7 +231,7 @@ pnpm test:e2e # run Playwright smoke tests
 
 ## Testing
 
-Tests are intentionally focused and lightweight for a portfolio SaaS project. They cover shared utilities, form validation, dashboard metric calculations, quote-to-invoice business rules and Server Action outcomes, migration security invariants, PDF data mapping, rendering and private-response security, accessible confirmation behavior, and an auth/dashboard smoke flow.
+Tests are intentionally focused and lightweight for a portfolio SaaS project. They cover shared utilities, form validation, dashboard metric calculations, quote-to-invoice business rules and Server Action outcomes, migration security invariants, PDF data mapping, rendering and private-response security, Stripe Checkout creation/reuse, signed webhook routing and idempotent payment synchronization, accessible confirmation behavior, and an auth/dashboard smoke flow.
 
 ```bash
 pnpm test
@@ -231,9 +251,10 @@ This app is ready for Vercel-style deployment:
 
 1. Create a hosted Supabase project.
 2. Apply the SQL migration.
-3. Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to the deployment environment.
-4. Add `DEMO_USER_EMAIL` and `DEMO_USER_PASSWORD` if the hosted demo CTA should be enabled.
-5. Deploy the Next.js app.
+3. Add `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and the server-only `SUPABASE_SERVICE_ROLE_KEY` to the deployment environment.
+4. For test-mode invoice payments, add `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and the trusted public `APP_URL`, then register `/api/stripe/webhook` as a Stripe test webhook endpoint.
+5. Add `DEMO_USER_EMAIL` and `DEMO_USER_PASSWORD` if the hosted demo CTA should be enabled.
+6. Deploy the Next.js app.
 
 ## Portfolio Purpose
 

@@ -13,10 +13,13 @@ import {
   getInvoiceValidationMessage,
   parseInvoiceFormData,
 } from "@/lib/invoices/validation";
+import { createOrReuseInvoiceCheckout } from "@/lib/invoices/payment";
 import {
   demoDeleteDisabledMessage,
   isDemoUser,
 } from "@/lib/auth/is-demo-user";
+import { getTrustedAppUrl } from "@/lib/stripe/config";
+import { getStripeClient } from "@/lib/stripe/server";
 import { createClient } from "@/lib/supabase/server";
 
 const invoicesPath = "/dashboard/invoices";
@@ -103,4 +106,58 @@ export async function deleteInvoice(invoiceId: string) {
 
   revalidatePath(invoicesPath);
   redirectWithMessage("success", "Invoice deleted.");
+}
+
+export async function startInvoicePayment(invoiceId: string) {
+  const { supabase, user } = await getAuthenticatedUserId();
+  let result;
+
+  try {
+    result = await createOrReuseInvoiceCheckout({
+      appUrl: getTrustedAppUrl(),
+      invoiceId,
+      stripe: getStripeClient(),
+      supabase,
+      userId: user.id,
+    });
+  } catch (error) {
+    logServerActionError("startInvoicePayment", error);
+    redirectWithMessage(
+      "error",
+      "Unable to open secure Checkout. Please try again.",
+    );
+  }
+
+  if (result.kind === "error") {
+    logServerActionError("startInvoicePayment", result.error);
+    redirectWithMessage(
+      "error",
+      "Unable to open secure Checkout. Please try again.",
+    );
+  }
+
+  if (result.kind === "not_found") {
+    redirectWithMessage("error", "Invoice not found.");
+  }
+
+  if (result.kind === "already_paid") {
+    redirectWithMessage("warning", "This invoice is already paid.");
+  }
+
+  if (result.kind === "ineligible") {
+    redirectWithMessage(
+      "warning",
+      "Only sent or overdue invoices can be paid online.",
+    );
+  }
+
+  if (result.kind === "invalid_amount") {
+    redirectWithMessage(
+      "warning",
+      "Invoice amount must be between NZ$0.50 and NZ$999,999.99 for online payment.",
+    );
+  }
+
+  revalidatePath(invoicesPath);
+  redirect(result.url);
 }

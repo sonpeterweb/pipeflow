@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Download, Plus, Receipt } from "lucide-react";
+import { CreditCard, Download, Plus, Receipt } from "lucide-react";
 
 import {
   createInvoice,
   deleteInvoice,
+  startInvoicePayment,
   updateInvoice,
 } from "@/app/dashboard/invoices/actions";
 import { ConfirmationDialog } from "@/components/feedback/confirmation-dialog";
@@ -24,6 +25,7 @@ import {
 import { EmptyState as EmptyStateView } from "@/components/ui/empty-state";
 import { Field, FieldLabel, Input, Select } from "@/components/ui/form-controls";
 import { invoiceStatuses } from "@/lib/invoices/validation";
+import { payableInvoiceStatuses } from "@/lib/invoices/payment";
 import { createClient } from "@/lib/supabase/server";
 
 type Invoice = {
@@ -353,24 +355,38 @@ function InvoiceCard({
 }) {
   const updateInvoiceWithId = updateInvoice.bind(null, invoice.id);
   const deleteInvoiceWithId = deleteInvoice.bind(null, invoice.id);
+  const startInvoicePaymentWithId = startInvoicePayment.bind(null, invoice.id);
   const invoiceTitle = invoice.invoice_number || "Untitled invoice";
 
   return (
     <RecordCard
       actions={
-        <Link
-          aria-label={`Download PDF for ${invoiceTitle}`}
-          className={buttonVariants({
-            className: "gap-2",
-            variant: "outline",
-          })}
-          href={`/dashboard/invoices/${invoice.id}/pdf`}
-          rel="noreferrer"
-          target="_blank"
-        >
-          <Download aria-hidden="true" className="size-4" />
-          Download PDF
-        </Link>
+        <>
+          {payableInvoiceStatuses.has(invoice.status) ? (
+            <form action={startInvoicePaymentWithId}>
+              <SubmitButton
+                className="h-11 gap-2"
+                pendingLabel="Opening Checkout..."
+              >
+                <CreditCard aria-hidden="true" className="size-4" />
+                Pay Invoice
+              </SubmitButton>
+            </form>
+          ) : null}
+          <Link
+            aria-label={`Download PDF for ${invoiceTitle}`}
+            className={buttonVariants({
+              className: "h-11 gap-2",
+              variant: "outline",
+            })}
+            href={`/dashboard/invoices/${invoice.id}/pdf`}
+            rel="noreferrer"
+            target="_blank"
+          >
+            <Download aria-hidden="true" className="size-4" />
+            Download PDF
+          </Link>
+        </>
       }
       eyebrow={
         <StatusBadge tone={statusTones[invoice.status]}>
@@ -488,6 +504,11 @@ export default async function InvoicesPage({ searchParams }: InvoicesPageProps) 
         eyebrow="Finance"
         title="Invoices"
       />
+
+      <p className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300">
+        Online invoice payments use Stripe test mode. No real charge will be
+        made.
+      </p>
 
       {invoicesResult.error ? (
         <Message
